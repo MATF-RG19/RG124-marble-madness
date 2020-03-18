@@ -1,10 +1,11 @@
 #include <GL/glut.h>
 #include <stdio.h>
-#include "field.cpp"
+#include "field.hpp"
 #include <vector>
 #include <fstream>
 #include <string>
 #include <iostream>
+#include "marble.hpp"
 
 #define FWD 1
 #define LEFT 3
@@ -13,7 +14,7 @@
 #define base_g 9.81
 #define base_a 5
 
-static int gravity_on = 0;
+int gravity_on = 0;
 
 /* Deklaracije callback funkcija. */
 static void on_display(void);
@@ -23,72 +24,45 @@ static void on_reshape(int width, int height);
 static void on_timer(int value);
 
 //funkcije
-void marble(double x, double y, double z);
-void plain();
 void camera();
-void end();
-
 void move(int direction);
+void make_level(const std::string& name);
+
+
 
 std::vector<Square*> *level = new std::vector<Square*>;
 
 void make_level(const std::string& name){    
-    std::string line;
+    
     std::ifstream myfile(name.c_str());
-    double dx, dy,dz,dsize;
+    int typeOfField, y;
     if (myfile.is_open())
     {
-        while(!myfile.eof()){
-            myfile >> dx >> dy >> dz >> dsize;
-            level->push_back(new Flat(dx,dy,dz,dsize));
+        for (unsigned i = 0; i<20; i++){
+            for(unsigned j = 0; j<20; j++){
+                myfile >> typeOfField >> y;
+                if (typeOfField != 0){
+                    Square *s = new Square(i,y,j, typeOfField);
+                    level->push_back(s);
+                }
+            }
         }
         myfile.close();
     }
 
     else std::cout << "Unable to open file"; 
-
 }
 
 
 
-class MarbleBall
-{
-public:
-    double x;
-    double y;
-    double z;
-    double v_x;
-    double v_y;
-    double v_z;
-    
-    MarbleBall() 
-    {
-        x = 0;
-        y = 0;
-        z = 0;
-        v_x = 0;
-        v_y = 0;
-        v_z = 0;
-    };
-    void redraw() { marble(x, y, z); };
-    void reset()
-    {
-        x = 0;
-        y = 0;
-        z = 0;
-        v_x = 0;
-        v_y = 0;
-        v_z = 0;
-        gravity_on = 0;
-    }
-};
+
+
+
 
 MarbleBall ball;
 
 static int window_width, window_height;
-float x=0;
-float y=0;
-float speed=1;
+
 
 void applyAcc(double amp, int x, int y, int z)
 {
@@ -182,7 +156,7 @@ static void on_keyboard(unsigned char key, int x, int y){
             
     }
     
-    glutPostRedisplay();
+     glutPostRedisplay();
 }
 /*
 static void on_keyReleased(unsigned char key , int x , int y ){
@@ -210,41 +184,39 @@ static void on_keyReleased(unsigned char key , int x , int y ){
 }
 */
 void move(int direction){
-    //std::cout << "move" << std::endl;
-
     
     switch(direction)
     {
         case FWD:
         {
             ball.v_x = 0;
-            ball.v_y = (ball.v_y < 0) ? 0 : ball.v_y;
-            ball.v_y += base_a;
-            ball.v_y = ball.v_y >= 15 ? 15 : ball.v_y;
-            ball.y += ball.v_y;
+            ball.v_z = (ball.v_z < 0) ? 0 : ball.v_z;
+            ball.v_z += base_a;
+            ball.v_z = ball.v_z >= 15 ? 15 : ball.v_z;
+            ball.z += ball.v_z;
             break;
 	}
         case BACK:
         {
             ball.v_x = 0;
-            ball.v_y = (ball.v_y > 0) ? 0 : ball.v_y;
-            ball.v_y -= base_a;
-            ball.v_y = ball.v_y <= -15 ? -15 : ball.v_y;
-            ball.y += ball.v_y;
+            ball.v_z = (ball.v_z > 0) ? 0 : ball.v_z;
+            ball.v_z -= base_a;
+            ball.v_z = ball.v_z <= -15 ? -15 : ball.v_z;
+            ball.z += ball.v_z;
             break;
 	}
-        case RIGHT:
+        case LEFT:
         {
-            ball.v_y = 0;
+            ball.v_z = 0;
             ball.v_x = (ball.v_x < 0) ? 0 : ball.v_x;
             ball.v_x += base_a;
             ball.v_x = ball.v_x >= 15 ? 15 : ball.v_x;
             ball.x += ball.v_x;
             break;
 	}
-        case LEFT:
+        case RIGHT:
         {
-            ball.v_y = 0;
+            ball.v_z = 0;
             ball.v_x = (ball.v_x > 0) ? 0 : ball.v_x;
             ball.v_x -= base_a;
             ball.v_x = ball.v_x <= -15 ? -15 : ball.v_x;
@@ -257,15 +229,20 @@ void move(int direction){
 
 static void on_timer(int value)
 {
-    if(value != 0) return;
+    if(value == 0){
     
-    ball.v_z -= base_g;
-    ball.z += ball.v_z;
+        ball.v_y -= base_g;
+        ball.y += ball.v_y;
+        
+        glutPostRedisplay();
+        if (gravity_on == 1)
+        {
+            glutTimerFunc(20, on_timer, 0);
+        }
+    }
     
-    glutPostRedisplay();
-    if (gravity_on == 1)
-    {
-        glutTimerFunc(100, on_timer, 0);
+    if(value == 1){
+        //TODO vreme do prekida
     }
 }
 
@@ -330,18 +307,18 @@ static void on_display(void)
     glEnable(GL_LIGHTING);
     ball.redraw();
     
-    glPushMatrix();
-        glTranslatef(50,50,50);
-        glColor3f(1,0,0);
-        glutSolidSphere(10,10,10);
-    glPopMatrix();
-    
-    glPushMatrix();
-        glColor3f(0.5,0.5,0);
-        glTranslatef(0,0,-50);
-        glScaled(2000,2000,1);
-        glutSolidCube(1);
-    glPopMatrix();
+//     glPushMatrix();
+//         glTranslatef(50,50,50);
+//         glColor3f(1,0,0);
+//         glutSolidSphere(10,10,10);
+//     glPopMatrix();
+//     
+//     glPushMatrix();
+//         glColor3f(0.5,0.5,0);
+//         glTranslatef(0,-50,0);
+//         glScaled(2000,1,2000);
+//         glutSolidCube(1);
+//     glPopMatrix();
     
     
 
@@ -350,48 +327,8 @@ static void on_display(void)
 }
 
 void camera(){
-    gluLookAt(ball.x - 200, ball.y - 200, ball.z + 500, ball.x, ball.y, ball.z,0,0,1);
+    gluLookAt(ball.x, ball.y + 500, ball.z - 500, ball.x, ball.y, ball.z,0,1,0);
 }
 
 
-void marble(double x, double y, double z){
-    glPushMatrix();
-        glColor3f(0, 0, 0);
-        
-        if (z < -3000)
-        {
-            ball.reset();
-        }
-        else
-        {
-            glTranslatef(x, y, z);
-        }
-        
-        if (ball.v_x != 0) 
-        {
-            glRotatef(x, 0, 1, 0);
-        }
-        else if (ball.v_y != 0) 
-        {
-            glRotatef(-y, 1, 0, 0);
-        }
-        
-        glutSolidSphere(50,100,100);
-        /*
-        glTranslatef(0,0,45);
-        glColor3f(0,0,1);
-        glutSolidSphere(10,10,10);
-        glTranslatef(0,0,-45);
-        
-        glTranslatef(0,45,0);
-        glColor3f(0,1,0);
-        glutSolidSphere(10,10,10);
-        glTranslatef(0,-45,0);
-        
-        glTranslatef(45,0,0);
-        glColor3f(1,0,0);
-        glutSolidSphere(10,10,10);
-        glTranslatef(-45,0,0);
-        */
-    glPopMatrix();
-}
+
