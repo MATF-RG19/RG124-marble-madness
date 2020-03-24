@@ -1,16 +1,16 @@
 PROGRAM   = marble_madness
 CC        = g++
-CFLAGS    = -g -Wall
+CFLAGS    = -g -Wall -std=c++17
 LDFLAGS   = -lGL -lGLU -lglut
 
 $(PROGRAM): main.o field.o marble.o
-	$(CC) -o $(PROGRAM) $^ $(LDFLAGS) 
+	$(CC) -o $(PROGRAM) $^ $(LDFLAGS) $(CFLAGS) 
 field.o: field.cpp field.hpp
-	$(CC) -c -o $@ $< $(LDFLAGS)
+	$(CC) -c -o $@ $< $(LDFLAGS) $(CFLAGS)
 main.o: main.cpp
-	$(CC) -c -o $@ $< $(LDFLAGS)
+	$(CC) -c -o $@ $< $(LDFLAGS) $(CFLAGS)
 maeble.o: marble.cpp marble.hpp
-	$(CC) -c -o $@ $< $(LDFLAGS)
+	$(CC) -c -o $@ $< $(LDFLAGS) $(CFLAGS)
 
 .PHONY: clean
 

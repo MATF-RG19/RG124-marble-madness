@@ -18,19 +18,28 @@ public:
     Square(double x, double y, double z,int typeOfField);
     
     void draw();
-    
+    int nesto();
+    int getLevel();
+    double getX();
+    double getY();
+    double getZ();
+    int getType();
     
 private:
     void drawEdge();
     void drawCorner();
     void drawCube();
+    void drawBelow(int level);
     
+   
     double x;
     double y;
     double z;
-    double size;
+    int level;
     int typeOfField;
 };
+
+
 
 
 

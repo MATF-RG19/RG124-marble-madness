@@ -7,30 +7,33 @@
 #include <iostream>
 #include "marble.hpp"
 
-#define FWD 1
-#define LEFT 3
-#define BACK 2
-#define RIGHT 4
+
 #define base_g 9.81
-#define base_a 5
+
+
+
 
 int gravity_on = 0;
+int remainingTime =100;
+int A=0;
+int D=0;
+int W=0;
+int S=0;
 
 /* Deklaracije callback funkcija. */
 static void on_display(void);
 static void on_keyboard(unsigned char key, int x, int y);
 static void on_reshape(int width, int height);
-//static void on_keyReleased(unsigned char key , int x , int y);
+static void on_keyReleased(unsigned char key , int x , int y);
 static void on_timer(int value);
 
 //funkcije
 void camera();
-void move(int direction);
 void make_level(const std::string& name);
 
+Square *field[20][20];
 
 
-std::vector<Square*> *level = new std::vector<Square*>;
 
 void make_level(const std::string& name){    
     
@@ -42,8 +45,11 @@ void make_level(const std::string& name){
             for(unsigned j = 0; j<20; j++){
                 myfile >> typeOfField >> y;
                 if (typeOfField != 0){
-                    Square *s = new Square(i,y,j, typeOfField);
-                    level->push_back(s);
+                    Square *p = new Square(i,y,j,typeOfField);
+                    field[i][j]=p;
+                }
+                else{
+                    field[i][j]=nullptr;
                 }
             }
         }
@@ -61,18 +67,13 @@ void make_level(const std::string& name){
 
 MarbleBall ball;
 
-static int window_width, window_height;
 
 
-void applyAcc(double amp, int x, int y, int z)
-{
-    
-}
+
 
 int main(int argc, char **argv)
 {
-    make_level("1.txt");
-    
+    make_level("level1.txt");
     
     /* Inicijalizuje se GLUT. */
     glutInit(&argc, argv);
@@ -84,17 +85,19 @@ int main(int argc, char **argv)
     glutCreateWindow(argv[0]);
 
 
-    
+    glutIgnoreKeyRepeat(true);
     /* Registruju se callback funkcije. */
     glutDisplayFunc(on_display);
     glutKeyboardFunc(on_keyboard);
     glutReshapeFunc(on_reshape);
-    //glutKeyboardUpFunc(on_keyReleased);
+    glutKeyboardUpFunc(on_keyReleased);
     
     /* Obavlja se OpenGL inicijalizacija. */
     glClearColor(0.75, 0.75, 0.75, 0);
     glEnable(GL_DEPTH_TEST);
 
+    glutTimerFunc(1000, on_timer, 1);
+    glutTimerFunc(20, on_timer, 2);
     /* Program ulazi u glavnu petlju. */
     glutMainLoop();
 
@@ -104,8 +107,7 @@ int main(int argc, char **argv)
 static void on_reshape(int width, int height){
     
     
-    window_width = width;
-    window_height = height;
+
     glViewport(0,0,width,height);
     
     glMatrixMode(GL_PROJECTION);
@@ -133,19 +135,19 @@ static void on_keyboard(unsigned char key, int x, int y){
             break;
         case 'W':
         case 'w':
-            move(FWD);
+            W=1;
             break;
         case 'A':
         case 'a':
-            move(LEFT);
+            A=1;
             break;
         case 'S':
         case 's':
-            move(BACK);
+            S=1;
             break;
         case 'D':
         case 'd':
-            move(RIGHT);
+            D=1;
             break;
         case 'R':
         case 'r':
@@ -153,79 +155,36 @@ static void on_keyboard(unsigned char key, int x, int y){
                 ball.reset();
                 break;
             }
-            
     }
     
-     glutPostRedisplay();
+     
 }
-/*
+
 static void on_keyReleased(unsigned char key , int x , int y ){
 
-	std::cout << " onKeyRealeased " << std::endl; 
+	
     switch(key){
         case 'W':
         case 'w':
-            speed -= 1;
+            W=0;
             break;
          case 'A':
          case 'a':
-             speed -= 1;
+             A=0;
              break;
         case 'S':
         case 's':
-            speed = 1;
+            S=0;
             break;
         case 'D':
         case 'd':
-            speed = 1;
+            D=0;
             break;
             
     }
 }
-*/
-void move(int direction){
-    
-    switch(direction)
-    {
-        case FWD:
-        {
-            ball.v_x = 0;
-            ball.v_z = (ball.v_z < 0) ? 0 : ball.v_z;
-            ball.v_z += base_a;
-            ball.v_z = ball.v_z >= 15 ? 15 : ball.v_z;
-            ball.z += ball.v_z;
-            break;
-	}
-        case BACK:
-        {
-            ball.v_x = 0;
-            ball.v_z = (ball.v_z > 0) ? 0 : ball.v_z;
-            ball.v_z -= base_a;
-            ball.v_z = ball.v_z <= -15 ? -15 : ball.v_z;
-            ball.z += ball.v_z;
-            break;
-	}
-        case LEFT:
-        {
-            ball.v_z = 0;
-            ball.v_x = (ball.v_x < 0) ? 0 : ball.v_x;
-            ball.v_x += base_a;
-            ball.v_x = ball.v_x >= 15 ? 15 : ball.v_x;
-            ball.x += ball.v_x;
-            break;
-	}
-        case RIGHT:
-        {
-            ball.v_z = 0;
-            ball.v_x = (ball.v_x > 0) ? 0 : ball.v_x;
-            ball.v_x -= base_a;
-            ball.v_x = ball.v_x <= -15 ? -15 : ball.v_x;
-            ball.x += ball.v_x;
-            break;
-	}
-    }
-    
-}
+
+
 
 static void on_timer(int value)
 {
@@ -242,12 +201,22 @@ static void on_timer(int value)
     }
     
     if(value == 1){
-        //TODO vreme do prekida
+        //TODO vreme do kraja
+    }
+    
+    if(value == 2){
+        
+        ball.move(A,D,W,S);
+        glutPostRedisplay();
+
+        glutTimerFunc(20,on_timer,2);
+        
     }
 }
 
 static void on_display(void)
 {
+    
     /* Pozicija svetla (u pitanju je direkcionalno svetlo). */
     GLfloat light_position[] = { 0, 0, 2000, 0 };
 
@@ -301,8 +270,13 @@ static void on_display(void)
     
     glShadeModel(GL_SMOOTH);
     glDisable(GL_LIGHTING);
-    for(unsigned i=0; i<level->size(); i++){
-        (*level)[i]->draw();
+    for(unsigned i=0; i<20; i++){
+        for(unsigned j = 0; j<20; j++){
+            if(field[i][j]==nullptr)
+                continue;
+            field[i][j]->draw();
+        }
+        
     }
     glEnable(GL_LIGHTING);
     ball.redraw();

@@ -4,19 +4,49 @@ Square::Square(double x, double y, double z, int typeOfField){
     this->x=100*x;
     this->y=100*y;
     this->z=100*z;
-    this->size=100;
+    level=y;
     this->typeOfField=typeOfField;
 }
 
+double Square::getX(){
+    return x;
+}
+
+double Square::getY(){
+    return y;
+}
+
+double Square::getZ(){
+    return z;
+}
+
+int Square::getLevel(){
+    return level;
+}
+
+int Square::getType(){
+    return typeOfField;
+}
+
+void Square::drawBelow(int lvl){
+    if(lvl>0)
+        drawBelow(lvl-1);
+    glTranslatef(0,-100,0);
+    drawCube();
+}
 
 void Square::draw(){
-        
+    
     glPushMatrix();
-            
+        
         
         glTranslatef(x,y,z);
         
-       
+        glPushMatrix();
+        if(level >0){
+            drawBelow(level-1);
+        }
+        glPopMatrix();
             
             
         switch(typeOfField){
@@ -59,8 +89,6 @@ void Square::draw(){
                 glRotatef(90,0,1,0);
                 drawEdge();
                 break;
-            
-        
         }
        
         
