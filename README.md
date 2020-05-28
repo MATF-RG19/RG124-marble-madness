@@ -1,5 +1,4 @@
 # RG124-marble-madness
-# RG126-marble-maze
 
 ### :black_circle: Opis:
 Projekat je napisan na programskom jeziku C++, koriscenjem OpenGL-a i GLUT biblioteke.
