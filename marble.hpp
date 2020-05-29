@@ -24,7 +24,8 @@ public:
     void redraw();
     void reset();
     void colision(int A, int D, int W, int S);
-    
+    void startingPosition(int x, int y, int z);
+    void gameEnd();
 private:
     int radius;
     int position_x;

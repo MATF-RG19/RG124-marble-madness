@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <math.h>
 #include "marble.hpp"
 
 
@@ -13,7 +14,10 @@
 
 
 
-int gravity_on = 0;
+int winGame = 0;
+int CamRotationAngle=180;
+
+
 int remainingTime =100;
 int A=0;
 int D=0;
@@ -29,16 +33,21 @@ static void on_timer(int value);
 
 //funkcije
 void camera();
-void make_level(const std::string& name);
+void makeLevel(const std::string& name);
+void rotateCamera();
 
+MarbleBall ball;
+End end=End();
 Square *field[20][20];
 
 
-
-void make_level(const std::string& name){    
+void makeLevel(const std::string& name){    
     
     std::ifstream myfile(name.c_str());
+    int startX, startZ;
+    int endX, endZ;
     int typeOfField, y;
+    
     if (myfile.is_open())
     {
         for (unsigned i = 0; i<20; i++){
@@ -53,10 +62,30 @@ void make_level(const std::string& name){
                 }
             }
         }
-        myfile.close();
+        
     }
-
     else std::cout << "Unable to open file"; 
+    
+    
+    
+    myfile >> startX >> startZ;
+    if(field[startX][startZ]){
+        ball.startingPosition(startX, field[startX][startZ]->getLevel()+1, startZ);
+    }
+    else{
+        std::cout << startX << " " <<startZ << " can't be starting position";
+        exit(EXIT_FAILURE);
+    }
+    for(unsigned i = 0; i < 6; i++){
+        myfile >> endX >> endZ;
+        if(!field[endX][endZ]){
+            std::cout << endX << " " << endZ << " can't be end position";
+            exit(EXIT_FAILURE);
+        }
+        end.addSquare(field[endX][endZ], endX, endZ);
+    }
+    
+    myfile.close();
 }
 
 
@@ -65,15 +94,10 @@ void make_level(const std::string& name){
 
 
 
-MarbleBall ball;
-
-
-
-
-
 int main(int argc, char **argv)
 {
-    make_level("level1.txt");
+    
+    makeLevel("level1.txt");
     
     /* Inicijalizuje se GLUT. */
     glutInit(&argc, argv);
@@ -104,6 +128,11 @@ int main(int argc, char **argv)
     return 0;
 }
 
+
+
+
+
+
 static void on_reshape(int width, int height){
     
     
@@ -118,18 +147,6 @@ static void on_reshape(int width, int height){
 
 static void on_keyboard(unsigned char key, int x, int y){
     switch(key){
-        case 'g':
-	case 'G':
-            if(gravity_on == 0)
-            {
-		glutTimerFunc(100, on_timer, 0);
-		gravity_on = 1;
-            }
-            else
-            {
-		gravity_on = 0;
-            }
-            break;
         case 27:
             exit(0);
             break;
@@ -151,10 +168,16 @@ static void on_keyboard(unsigned char key, int x, int y){
             break;
         case 'R':
         case 'r':
-            {
-                ball.reset();
-                break;
-            }
+            ball.reset();
+            break;
+        case 'E':
+        case 'e':
+            CamRotationAngle=(CamRotationAngle+5) % 360;
+            break;
+        case 'Q':
+        case 'q':
+            CamRotationAngle=(CamRotationAngle-5) % 360;
+            break;
     }
     
      
@@ -180,7 +203,6 @@ static void on_keyReleased(unsigned char key , int x , int y ){
         case 'd':
             D=0;
             break;
-            
     }
 }
 
@@ -188,27 +210,24 @@ static void on_keyReleased(unsigned char key , int x , int y ){
 
 static void on_timer(int value)
 {
-    if(value == 0){
     
-        ball.v_y -= base_g;
-        ball.y += ball.v_y;
-        
-        glutPostRedisplay();
-        if (gravity_on == 1)
-        {
-            glutTimerFunc(20, on_timer, 0);
-        }
-    }
     
     if(value == 1){
         //TODO vreme do kraja
+        //dve sekunde po kraju animacije da se pozove undo!
     }
     
     if(value == 2){
-        
+        if(winGame){
+            A=0;
+            D=0;
+            W=0;
+            S=0;
+        }
         ball.move(A,D,W,S);
         glutPostRedisplay();
 
+        
         glutTimerFunc(20,on_timer,2);
         
     }
@@ -216,6 +235,7 @@ static void on_timer(int value)
 
 static void on_display(void)
 {
+    
     
     /* Pozicija svetla (u pitanju je direkcionalno svetlo). */
     GLfloat light_position[] = { 0, 0, 2000, 0 };
@@ -280,20 +300,7 @@ static void on_display(void)
     }
     glEnable(GL_LIGHTING);
     ball.redraw();
-    
-//     glPushMatrix();
-//         glTranslatef(50,50,50);
-//         glColor3f(1,0,0);
-//         glutSolidSphere(10,10,10);
-//     glPopMatrix();
-//     
-//     glPushMatrix();
-//         glColor3f(0.5,0.5,0);
-//         glTranslatef(0,-50,0);
-//         glScaled(2000,1,2000);
-//         glutSolidCube(1);
-//     glPopMatrix();
-    
+    end.draw();
     
 
     /* Nova slika se salje na ekran. */
@@ -301,7 +308,11 @@ static void on_display(void)
 }
 
 void camera(){
-    gluLookAt(ball.x, ball.y + 500, ball.z - 500, ball.x, ball.y, ball.z,0,1,0);
+    int cameraDistance=500;
+    float camX=ball.x+cameraDistance*sin(CamRotationAngle*2*M_PI/360);
+    float camY=ball.y+cameraDistance;
+    float camZ=ball.z+cameraDistance*cos(CamRotationAngle*2*M_PI/360);
+    gluLookAt(camX, camY, camZ, ball.x, ball.y, ball.z,0,1,0);
 }
 
 

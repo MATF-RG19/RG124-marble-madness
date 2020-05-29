@@ -40,6 +40,46 @@ private:
 };
 
 
+struct Position{
+    Position(int x, int y, int z){
+        this->x = x;
+        this->y = y;
+        this->z = z;
+    }
+    int x;
+    int y;
+    int z;
+};
+
+class End{
+public:
+    
+    ~End(){
+        for(unsigned i=0; i < squares.size();i++){
+            delete squares[i];
+        }
+    }
+    
+    void empty(){
+        squares.clear();
+        positions.clear();
+    }
+    
+    void addSquare(Square *s, int x, int z){
+        Position p = Position(x, s->getLevel()+1, z);
+        positions.push_back(p);
+        squares.push_back(s);
+    }
+    void draw();
+    std::vector<Position> gameEnd(){
+        return positions;
+    }
+private:
+    std::vector<Square*> squares;
+    std::vector<Position> positions;
+};
+
+
 
 
 

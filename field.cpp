@@ -1,4 +1,5 @@
 #include "field.hpp"
+#include <iostream>
 
 Square::Square(double x, double y, double z, int typeOfField){
     this->x=100*x;
@@ -355,6 +356,27 @@ void Square::drawCorner(){
         glEnd();
     glPopMatrix();
 }
+
+void End::draw(){
+    for(unsigned i =0; i<squares.size(); i++){
+        if(squares[i]->getType()==5){
+            glPushMatrix();
+                glColor3f(1,0,0);
+                glTranslatef(squares[i]->getX(),
+                             squares[i]->getY()+1,
+                             squares[i]->getZ());
+                glBegin(GL_POLYGON);
+                    glVertex3f(0,100,0);
+                    glVertex3f(0,100,100);
+                    glVertex3f(100,100,100);
+                    glVertex3f(100,100,0);
+                    glVertex3f(0,100,0);
+                glEnd();
+            glPopMatrix();
+        }
+    }
+}
+
 
 
 
