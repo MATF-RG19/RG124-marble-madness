@@ -35,7 +35,7 @@ void Square::drawBelow(int lvl){
     glTranslatef(0,-100,0);
     drawCube();
 }
-
+//crtanje polja
 void Square::draw(){
     
     glPushMatrix();

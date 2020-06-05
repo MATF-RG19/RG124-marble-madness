@@ -4,14 +4,16 @@
 #define PI 3.141592
 #define gravity 9.81
 
+
+
+extern int remainingTime;
+extern int gameOver;
 extern int winGame;
 extern Square *field[20][20];
 extern End end;
-int ballBreak =0;
-int break_animation = 0;
 
 
-
+//konstruktor klikera
 MarbleBall::MarbleBall() 
 {
     x = 0;
@@ -25,7 +27,7 @@ MarbleBall::MarbleBall()
     position_z = 0;
     position_y = 0;
 };
-
+//pocetna pozicija
 void MarbleBall::startingPosition(int x, int y, int z){
     this->x = 100*x+radius;
     this->y = 100*y+radius;
@@ -33,36 +35,33 @@ void MarbleBall::startingPosition(int x, int y, int z){
 }
 
 void MarbleBall::redraw() {
-    if(break_animation==1){
-        glTranslatef(x,y,z);
-        glutSolidCube(100);
-    }else{
-        glPushMatrix();
-            glColor3f(0, 0, 0);
-                
-            if (y < -1000)
-            {
-                reset();
-            }
-            else
-            {
-                glTranslatef(x, y, z);
-            }
-            
-            if (v_x != 0) 
-            {
-                glRotatef(x, 0, 1, 0);
-            }
-            else if (v_z != 0) 
-            {
-                glRotatef(-z, 1, 0, 0);
-            }
-                
-            glutSolidSphere(radius,100,100);
-        glPopMatrix();
-    }
-};
     
+    
+    glPushMatrix();
+        glColor3f(0, 0, 0);
+            
+        if (y < -1000)
+        {
+            reset();
+        }
+        else
+        {
+            glTranslatef(x, y, z);
+        }
+        
+        if (v_x != 0) 
+        {
+            glRotatef(x, 0, 1, 0);
+        }
+        else if (v_z != 0) 
+        {
+            glRotatef(-z, 1, 0, 0);
+        }
+            
+        glutSolidSphere(radius,100,100);
+    glPopMatrix();
+};
+//restart
 void MarbleBall::reset()
 {
     x = 45;
@@ -74,8 +73,11 @@ void MarbleBall::reset()
     v_x = 0;
     v_y = -gravity;
     v_z = 0;
+    winGame=0;
+    remainingTime=30;
+    gameOver=0;
 }
-
+//kretanje
 void MarbleBall::move(int A,int D,int W, int S){
     
         if(position_x>19 || position_x <0 || position_z >19 || position_z<0){
@@ -153,7 +155,7 @@ void MarbleBall::move(int A,int D,int W, int S){
         gameEnd();
         
 }
-
+//kolizija
 void MarbleBall::colision(int A,int D,int W, int S){
     double newX;
     double newY;
@@ -367,7 +369,7 @@ void MarbleBall::colision(int A,int D,int W, int S){
                 v_y=-v_z/0.9*1.1;
             }
             
-            //padanje lopte sa vise od jednog polja visine
+            //padanje lopte sa vise
             if(field[position_x][position_z]->getLevel()<position_y){
                 fieldY = field[position_x][position_z]->getY()+100+45;
                 if(y>=fieldY){
@@ -613,13 +615,12 @@ void MarbleBall::colision(int A,int D,int W, int S){
 }
 
 
-
+//polja za kraj igre
 void MarbleBall::gameEnd(){
     std::vector<Position> p=end.gameEnd();
     for(unsigned i=0; i <p.size(); i++){
         
         if(p[i].x==position_x && p[i].y==position_y && p[i].z==position_z){
-            std::cout << "game win!" << std::endl;
             winGame = 1;
         }
     }

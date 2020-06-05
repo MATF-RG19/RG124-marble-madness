@@ -51,6 +51,8 @@ struct Position{
     int z;
 };
 
+
+//polja za kraj igre
 class End{
 public:
     
@@ -78,12 +80,6 @@ private:
     std::vector<Square*> squares;
     std::vector<Position> positions;
 };
-
-
-
-
-
-
 
 
 
