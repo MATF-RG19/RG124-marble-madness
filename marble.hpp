@@ -27,6 +27,7 @@ public:
     void startingPosition(int x, int y, int z);
     void gameEnd();
 private:
+    
     int radius;
     int position_x;
     int position_y;

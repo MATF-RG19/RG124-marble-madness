@@ -13,15 +13,30 @@
 
 
 
-
 #define FILENAME0 "game_over.bmp"
 #define FILENAME1 "win.bmp"
 static GLuint names[2];
 
-int gameOver=0;
-int winGame = 0;
+
+//promenljive za unistavanje mape
+int destructRow;
+int isDestroy[20][20];
+int destruction;
+
+//parametar za pocetak igre
+int beforeBegin;
+
+//parametri kraja igre
+int gameOver;
+int winGame;
+
+//vreme do kraja igre
+int remainingTime;
+
+//pocetni pogled kamere
 int CamRotationAngle=180;
-int remainingTime =30;
+
+//paremetri kretanja
 int A=0;
 int D=0;
 int W=0;
@@ -47,8 +62,25 @@ End end=End();
 Square *field[20][20];
 
 
-//ucitavnje nivoa, pocetka i starta iz datoteke
+//ucitavnje nivoa, pocetka i starta iz datoteke i globalnih parametara
 void makeLevel(const std::string& name){    
+    
+    
+    //inicijalizacija za novi nivo
+    for(unsigned i = 0; i<20; i++){
+        for(unsigned j = 0; j<20; j++){
+            isDestroy[i][j]=0;
+        }
+    }
+    winGame=0;
+    remainingTime=20;
+    gameOver=0;
+    beforeBegin=1;
+    destruction=0;
+    destructRow=0;
+    end.empty();
+    
+    
     
     std::ifstream myfile(name.c_str());
     int startX, startZ;
@@ -74,7 +106,7 @@ void makeLevel(const std::string& name){
     else std::cout << "Unable to open file"; 
     
     
-    
+    // ucitavnje poceetne pozicije loptice
     myfile >> startX >> startZ;
     if(field[startX][startZ]){
         ball.startingPosition(startX, field[startX][startZ]->getLevel()+1, startZ);
@@ -83,6 +115,8 @@ void makeLevel(const std::string& name){
         std::cout << startX << " " <<startZ << " can't be starting position";
         exit(EXIT_FAILURE);
     }
+    
+    //ucitavnje polja gde je kraj
     for(unsigned i = 0; i < 6; i++){
         myfile >> endX >> endZ;
         if(!field[endX][endZ]){
@@ -91,6 +125,9 @@ void makeLevel(const std::string& name){
         }
         end.addSquare(field[endX][endZ], endX, endZ);
     }
+    
+    
+    
     
     myfile.close();
 }
@@ -105,6 +142,7 @@ int main(int argc, char **argv)
 {
     
     makeLevel("level1.txt");
+    
     
     /* Inicijalizuje se GLUT. */
     glutInit(&argc, argv);
@@ -128,8 +166,13 @@ int main(int argc, char **argv)
     
 
     //pokrecu se tajmeri
+    //tajmer za vereme do kraja igrice
     glutTimerFunc(1000, on_timer, 1);
+    //tajmer za odziv kretanja
     glutTimerFunc(20, on_timer, 2);
+    //tajmer za unistavanje mape
+    glutTimerFunc(500,on_timer,3);
+    
     
     
     /* Program ulazi u glavnu petlju. */
@@ -208,6 +251,8 @@ static void on_reshape(int width, int height){
 
 //ulaz sa tastature
 static void on_keyboard(unsigned char key, int x, int y){
+    
+    //beforeBegin=0;
     switch(key){
         case 27:
             exit(0);
@@ -273,30 +318,61 @@ static void on_keyReleased(unsigned char key , int x , int y ){
 static void on_timer(int value)
 {
     
-    
+    //meri vreme do kraja igre
     if(value == 1){
-        if(remainingTime>0){
-            remainingTime--;
+        if(!beforeBegin && remainingTime>0){
+            if(!winGame)
+                remainingTime--;
         }
-        else{
+        else if(remainingTime==0){
             gameOver=1;
+            destruction=1;
+            if(destructRow==20){
+                destruction=0;
+            }
         }
         glutTimerFunc(1000,on_timer,1);
     }
     
+    //tajmer za odziv tastature
     if(value == 2){
-        if(winGame || gameOver){
+        if(winGame || gameOver || beforeBegin){
             A=0;
             D=0;
             W=0;
             S=0;
         }
         ball.move(A,D,W,S);
+        if(destructRow==20){
+            destruction=0;
+        }
         
         glutPostRedisplay();
         
         glutTimerFunc(20,on_timer,2);
         
+    }
+    
+    //tajmer za unistavanje mape
+    
+    if(value == 3){
+        if(destruction==1){
+            if(winGame){
+                end.empty();
+                end.addSquare(field[int(ball.x/100)][int(ball.z/100)], 
+                            int(ball.x/100),int(ball.z/100));
+            }
+            if(gameOver) end.empty();
+            for(unsigned j = 0; j<20; j++)
+                isDestroy[destructRow][j]=1;
+            isDestroy[int(ball.x/100)][int(ball.z/100)]=0;
+            destructRow++;
+            if(destructRow==20){
+                destruction=0;
+            }
+        }
+        
+        glutTimerFunc(300,on_timer,3);
     }
 }
 
@@ -338,9 +414,9 @@ static void on_display(void)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
         
-    if(winGame){
+    if(winGame && !destruction){
         winEndScreen(1);
-    }else if(gameOver){
+    }else if(gameOver && !destruction){
         winEndScreen(0);
     }else{
         
@@ -365,14 +441,21 @@ static void on_display(void)
         glShadeModel(GL_SMOOTH);
         glDisable(GL_LIGHTING);
         
+        
+        
+        
         for(unsigned i=0; i<20; i++){
             for(unsigned j = 0; j<20; j++){
                 if(field[i][j]==nullptr)
                     continue;
-                field[i][j]->draw();
+                if(isDestroy[i][j]){
+                }else{
+                    field[i][j]->draw();
+                }
             }
-            
         }
+
+        
         glEnable(GL_LIGHTING);
         ball.redraw();
         glDisable(GL_LIGHTING);
@@ -433,6 +516,7 @@ void displayTime(char *string) {
 
 //teksture za pobedu i poraz u igrici
 void winEndScreen(int ind){
+    
     gluLookAt(0,0,-1,0,0,0,1,0,0);
     
      glPushMatrix();

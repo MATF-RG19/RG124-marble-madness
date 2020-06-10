@@ -1,6 +1,9 @@
 #include "field.hpp"
 #include <iostream>
 
+
+extern int destruction;
+
 Square::Square(double x, double y, double z, int typeOfField){
     this->x=100*x;
     this->y=100*y;
@@ -39,7 +42,6 @@ void Square::drawBelow(int lvl){
 void Square::draw(){
     
     glPushMatrix();
-        
         
         glTranslatef(x,y,z);
         
@@ -378,7 +380,9 @@ void End::draw(){
 }
 
 
-
+void Square::destroy(){
+    glTranslatef(0,100,0);
+}
 
 
 

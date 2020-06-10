@@ -17,6 +17,7 @@ class Square
 public:
     Square(double x, double y, double z,int typeOfField);
     
+    void destroy();
     void draw();
     int nesto();
     int getLevel();
@@ -80,6 +81,7 @@ private:
     std::vector<Square*> squares;
     std::vector<Position> positions;
 };
+
 
 
 

@@ -2,15 +2,22 @@
 
 #define MAX_SPEED 12
 #define PI 3.141592
-#define gravity 9.81
+#define gravity 0.2
 
+//parametar za unistavanje mape na kraju
+extern int destruction;
 
+//brzina posle koje lopta prestaje da skakuce
+double minHightStop=2;
 
-extern int remainingTime;
-extern int gameOver;
+//parametar za skakutanje pre pocetka 
+extern int beforeBegin;
+
 extern int winGame;
 extern Square *field[20][20];
 extern End end;
+
+extern void makeLevel(const std::string& name);
 
 
 //konstruktor klikera
@@ -27,10 +34,11 @@ MarbleBall::MarbleBall()
     position_z = 0;
     position_y = 0;
 };
+
 //pocetna pozicija
 void MarbleBall::startingPosition(int x, int y, int z){
     this->x = 100*x+radius;
-    this->y = 100*y+radius;
+    this->y = 100*y+radius+500;
     this->z = 100*z+radius;
 }
 
@@ -64,18 +72,20 @@ void MarbleBall::redraw() {
 //restart
 void MarbleBall::reset()
 {
+    makeLevel("level1.txt");
     x = 45;
-    y = 145;
+    y = 545;
     z = 45;
     position_x=0;
-    position_y=1;
+    position_y=5;
     position_z=0;
     v_x = 0;
     v_y = -gravity;
     v_z = 0;
-    winGame=0;
-    remainingTime=30;
-    gameOver=0;
+    minHightStop=2;
+    
+    
+    
 }
 //kretanje
 void MarbleBall::move(int A,int D,int W, int S){
@@ -132,7 +142,7 @@ void MarbleBall::move(int A,int D,int W, int S){
                 v_z=0;
         }
         
-        v_y=-gravity;
+        v_y+=-gravity;
         
         colision(A,D,W,S);
         
@@ -166,7 +176,7 @@ void MarbleBall::colision(int A,int D,int W, int S){
     int fieldType;
     
     
-    if(position_x<=19 && position_x >= 0 && position_z <=19 && position_z >= 0) v_y=0;
+    if(position_x<=19 && position_x >= 0 && position_z <=19 && position_z >= 0 && !beforeBegin) v_y=0;
     
     
     //padanje levo
@@ -252,7 +262,7 @@ void MarbleBall::colision(int A,int D,int W, int S){
     
         //ponasanje ako naidje na polje koje ne postoji
         if(!field[position_x][position_z]){
-            v_y=-gravity;
+            v_y=-10;
             //ako postoji kocka sa leve strane
             if(field[position_x+1][position_z]){
                 fieldX= field[position_x+1][position_z]->getX();
@@ -369,11 +379,36 @@ void MarbleBall::colision(int A,int D,int W, int S){
                 v_y=-v_z/0.9*1.1;
             }
             
-            //padanje lopte sa vise
-            if(field[position_x][position_z]->getLevel()<position_y){
-                fieldY = field[position_x][position_z]->getY()+100+45;
-                if(y>=fieldY){
-                    v_y=-gravity;
+            
+            
+            //skakutanje lopte na pocetku igre
+            if(beforeBegin){
+            fieldY = field[position_x][position_z]->getY()+100+45;
+            if(y<fieldY){
+                y=fieldY;
+            }
+            if(minHightStop<2){
+                v_y=0;
+                minHightStop=3;
+                y=fieldY;
+                beforeBegin=0;
+            }
+            if(y>fieldY){
+                v_y+=-gravity;
+            }else{
+                v_y=-v_y*2/4;
+                if(v_y!=0){
+                    minHightStop=v_y;
+                }
+            }
+            }else{
+                //padanje lopte sa vise
+                
+                if(field[position_x][position_z]->getLevel()<position_y){
+                    fieldY = field[position_x][position_z]->getY()+100+45;
+                    if(y>=fieldY){
+                        v_y=-5;
+                    }
                 }
             }
         }
@@ -404,6 +439,10 @@ void MarbleBall::colision(int A,int D,int W, int S){
                 newY = radius*cos(fi)+y;
                 newZ = radius*sin(teta)*sin(fi)+z;
                 if(fieldType!=4 && fieldType!=7 && fieldType!=6){
+                    if(newX>=fieldX){
+                        v_x=-v_x*99/100;
+                    }
+                }else if(field[position_x+1][position_z]->getLevel()>position_y){
                     if(newX>=fieldX){
                         v_x=-v_x*99/100;
                     }
@@ -463,6 +502,10 @@ void MarbleBall::colision(int A,int D,int W, int S){
                     if(newX<=fieldX){
                         v_x=-v_x*99/100;
                     }
+                } else if(field[position_x-1][position_z]->getLevel()>position_y){
+                    if(newX<=fieldX){
+                        v_x=-v_x*99/100;
+                    }
                 }
             }
         }
@@ -514,6 +557,10 @@ void MarbleBall::colision(int A,int D,int W, int S){
                 newY = radius*cos(fi)+y;
                 newZ = radius*sin(teta)*sin(fi)+z;
                 if(fieldType!=8 && fieldType!=9 && fieldType!=6){
+                    if(newZ>=fieldZ){
+                        v_z=-v_z*99/100;
+                    }
+                } else if(field[position_x][position_z+1]->getLevel()>position_y){
                     if(newZ>=fieldZ){
                         v_z=-v_z*99/100;
                     }
@@ -572,6 +619,10 @@ void MarbleBall::colision(int A,int D,int W, int S){
                     if(newZ<=fieldZ){
                         v_z=-v_z*99/100;
                     }
+                }else if(field[position_x][position_z-1]->getLevel()>position_y){
+                    if(newZ<=fieldZ){
+                        v_z=-v_z*99/100;
+                    }
                 }
             }
         }
@@ -615,6 +666,9 @@ void MarbleBall::colision(int A,int D,int W, int S){
 }
 
 
+
+
+
 //polja za kraj igre
 void MarbleBall::gameEnd(){
     std::vector<Position> p=end.gameEnd();
@@ -622,6 +676,7 @@ void MarbleBall::gameEnd(){
         
         if(p[i].x==position_x && p[i].y==position_y && p[i].z==position_z){
             winGame = 1;
+            destruction=1;
         }
     }
 }
