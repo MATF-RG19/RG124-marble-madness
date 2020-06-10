@@ -12,11 +12,9 @@ Cilj igre je stizanje do cilja kretanjem po mapi.
 | **a**     | kretanje levo   |
 | **s**     | kretanje nazad  |
 | **d**     | kretanje nazad  |
-| **w** +  **d** | gore-desno |
-| **d** +  **s** | dole-desno |
-| **s** +  **a** | dole-levo |
-| **a** +  **w** | gore-levo |
-
+| **r**     | restart |
+| **e**     | rotiranje kamere u desno |
+| **q**     | rotiranje kamere u levo |
 
 ### :wrench: Uputstvo za instalaciju i pokretanje: 
 ```shell
